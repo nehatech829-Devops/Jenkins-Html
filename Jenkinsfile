@@ -1,65 +1,86 @@
+```groovy
 pipeline {
     agent any
 
     environment {
-        REPO_URL = 'git@github.com:nehatech829-Devops/Jenkins-Html.git'
-        BRANCH = 'main'
+        REPO_URL = "git@github.com:nehatech829-Devops/Jenkins-Html.git"
+        BRANCH = "main"
+        CREDENTIALS = "github-ssh"
+        WORKSPACE_DIR = "Jenkins-Html"
     }
 
     stages {
 
-        stage('Clone GitHub Repository') {
+        stage('Clone Repository') {
             steps {
-                git branch: "${BRANCH}",
-                    url: "${REPO_URL}"
-            }
-        }
+                dir("${WORKSPACE_DIR}") {
+                    deleteDir()
+                }
 
-        stage('List Workspace Files') {
-            steps {
-                script {
-                    if (isUnix()) {
-                        sh 'ls -la'
-                    } else {
-                        bat 'dir'
-                    }
+                dir("${WORKSPACE_DIR}") {
+                    git branch: "${BRANCH}",
+                        credentialsId: "${CREDENTIALS}",
+                        url: "${REPO_URL}"
                 }
             }
         }
 
-        stage('Display HTML File') {
+        stage('Pull Latest Changes') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'cat index.html'
-                    } else {
-                        bat 'type index.html'
-                    }
+                dir("${WORKSPACE_DIR}") {
+                    sh '''
+                        git checkout main
+                        git pull origin main
+                    '''
                 }
             }
         }
 
-        stage('Archive HTML File') {
+        stage('Show Current Branch') {
             steps {
-                archiveArtifacts artifacts: 'index.html', fingerprint: true
+                dir("${WORKSPACE_DIR}") {
+                    sh 'git branch'
+                }
+            }
+        }
+
+        stage('Display Repository Files') {
+            steps {
+                dir("${WORKSPACE_DIR}") {
+                    sh '''
+                        echo "Repository Files:"
+                        ls -la
+                    '''
+                }
+            }
+        }
+
+        stage('Display Repository Content') {
+            steps {
+                dir("${WORKSPACE_DIR}") {
+                    sh '''
+                        find . -maxdepth 1 -type f | while read file
+                        do
+                            echo "=============================="
+                            echo "$file"
+                            echo "=============================="
+                            cat "$file"
+                        done
+                    '''
+                }
             }
         }
 
     }
 
     post {
-
         success {
-            echo 'Build completed successfully.'
+            echo "Repository cloned and updated successfully."
         }
 
         failure {
-            echo 'Build failed.'
-        }
-
-        always {
-            echo 'Pipeline execution finished.'
+            echo "Pipeline failed."
         }
     }
 }
-
+```
