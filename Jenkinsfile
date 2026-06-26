@@ -1,9 +1,8 @@
-```groovy
 pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/nehatech829-Devops/Jenkins-Html.git'
+        REPO_URL = 'git@github.com:nehatech829-Devops/Jenkins-Html.git'
         BRANCH = 'main'
     }
 
@@ -63,4 +62,4 @@ pipeline {
         }
     }
 }
-```
+
