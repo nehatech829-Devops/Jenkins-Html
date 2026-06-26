@@ -6,6 +6,7 @@ pipeline {
         BRANCH = "main"
         CREDENTIALS = "github-ssh"
         WORKSPACE_DIR = "Jenkins-Html"
+        DEPLOY_DIR = "/var/www/html"
     }
 
     stages {
@@ -14,9 +15,6 @@ pipeline {
             steps {
                 dir("${WORKSPACE_DIR}") {
                     deleteDir()
-                }
-
-                dir("${WORKSPACE_DIR}") {
                     git branch: "${BRANCH}",
                         credentialsId: "${CREDENTIALS}",
                         url: "${REPO_URL}"
@@ -27,68 +25,40 @@ pipeline {
         stage('Pull Latest Changes') {
             steps {
                 dir("${WORKSPACE_DIR}") {
-                    sh '''
+                    sh """
                         git checkout ${BRANCH}
                         git pull origin ${BRANCH}
-                    '''
+                    """
                 }
             }
         }
 
-        stage('Show Current Branch') {
+        stage('Deploy to Apache') {
             steps {
-                dir("${WORKSPACE_DIR}") {
-                    script {
-                        def currentBranch = sh(
-                            script: "git rev-parse --abbrev-ref HEAD",
-                            returnStdout: true
-                        ).trim()
-
-                        echo "=================================="
-                        echo "Build Triggered from Branch: ${currentBranch}"
-                        echo "=================================="
-                    }
-                }
+                sh """
+                    rm -rf ${DEPLOY_DIR}/*
+                    cp -r ${WORKSPACE_DIR}/* ${DEPLOY_DIR}/
+                """
             }
         }
 
-        stage('Repository Structure') {
+        stage('Verify Deployment') {
             steps {
-                dir("${WORKSPACE_DIR}") {
-                    sh '''
-                        echo "Repository Structure:"
-                        find .
-                    '''
-                }
+                sh """
+                    echo "Files in ${DEPLOY_DIR}:"
+                    ls -la ${DEPLOY_DIR}
+                """
             }
         }
-
-        stage('Display All Files') {
-            steps {
-                dir("${WORKSPACE_DIR}") {
-                    sh '''
-                        find . -type f | while read file
-                        do
-                            echo ""
-                            echo "======================================="
-                            echo "FILE: $file"
-                            echo "======================================="
-                            cat "$file"
-                        done
-                    '''
-                }
-            }
-        }
-
     }
 
     post {
         success {
-            echo "Repository cloned and updated successfully."
+            echo "Deployment completed successfully."
         }
 
         failure {
-            echo "Pipeline failed."
+            echo "Deployment failed."
         }
     }
 }
