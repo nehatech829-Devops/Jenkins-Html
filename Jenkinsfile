@@ -28,8 +28,8 @@ pipeline {
             steps {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
-                        git checkout main
-                        git pull origin main
+                        git checkout ${BRANCH}
+                        git pull origin ${BRANCH}
                     '''
                 }
             }
@@ -38,31 +38,41 @@ pipeline {
         stage('Show Current Branch') {
             steps {
                 dir("${WORKSPACE_DIR}") {
-                    sh 'git branch'
+                    script {
+                        def currentBranch = sh(
+                            script: "git rev-parse --abbrev-ref HEAD",
+                            returnStdout: true
+                        ).trim()
+
+                        echo "=================================="
+                        echo "Build Triggered from Branch: ${currentBranch}"
+                        echo "=================================="
+                    }
                 }
             }
         }
 
-        stage('Display Repository Files') {
+        stage('Repository Structure') {
             steps {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
-                        echo "Repository Files:"
-                        ls -la
+                        echo "Repository Structure:"
+                        find .
                     '''
                 }
             }
         }
 
-        stage('Display Repository Content') {
+        stage('Display All Files') {
             steps {
                 dir("${WORKSPACE_DIR}") {
                     sh '''
-                        find . -maxdepth 1 -type f | while read file
+                        find . -type f | while read file
                         do
-                            echo "=============================="
-                            echo "$file"
-                            echo "=============================="
+                            echo ""
+                            echo "======================================="
+                            echo "FILE: $file"
+                            echo "======================================="
                             cat "$file"
                         done
                     '''
@@ -82,4 +92,3 @@ pipeline {
         }
     }
 }
-
