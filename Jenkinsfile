@@ -5,15 +5,15 @@ pipeline {
         REPO_URL = "git@github.com:nehatech829-Devops/Jenkins-Html.git"
         BRANCH = "main"
         CREDENTIALS = "github-ssh"
-        DEPLOY_DIR = "/var/www/html"
     }
 
     stages {
 
         stage('Clone Repository to Apache') {
             steps {
-                dir("${DEPLOY_DIR}") {
-                    deleteDir()
+                dir('/var/www/html') {
+
+                    sh 'rm -rf .git *'
 
                     git branch: "${BRANCH}",
                         credentialsId: "${CREDENTIALS}",
@@ -24,7 +24,7 @@ pipeline {
 
         stage('Show Branch') {
             steps {
-                dir("${DEPLOY_DIR}") {
+                dir('/var/www/html') {
                     sh '''
                         echo "Current Branch:"
                         git branch --show-current
@@ -37,22 +37,20 @@ pipeline {
             }
         }
 
-        stage('Verify Repository') {
+        stage('Verify Deployment') {
             steps {
-                sh '''
-                    echo "Files inside /var/www/html"
-                    ls -la /var/www/html
-                '''
+                sh 'ls -la /var/www/html'
             }
         }
     }
 
     post {
         success {
-            echo "Repository successfully cloned into /var/www/html"
+            echo "Deployment Successful"
         }
+
         failure {
-            echo "Pipeline failed."
+            echo "Deployment Failed"
         }
     }
 }
