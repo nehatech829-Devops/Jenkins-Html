@@ -3,19 +3,41 @@ pipeline {
 
     environment {
         REPO_URL = "git@github.com:nehatech829-Devops/Jenkins-Html.git"
-        BRANCH = "main"
         CREDENTIALS = "github-ssh"
     }
 
     stages {
 
-        stage('Clone Repository to Apache') {
+        stage('Detect Branch') {
+            steps {
+                script {
+
+                    def branch = env.GIT_BRANCH ?: ""
+
+                    echo "Triggered Branch: ${branch}"
+
+                    if (branch.contains("main")) {
+                        env.BUILD_BRANCH = "main"
+                    }
+                    else if (branch.contains("frontend")) {
+                        env.BUILD_BRANCH = "frontend"
+                    }
+                    else {
+                        error("Branch not configured.")
+                    }
+
+                    echo "Deploying Branch: ${env.BUILD_BRANCH}"
+                }
+            }
+        }
+
+        stage('Clone Repository') {
             steps {
                 dir('/var/www/html') {
 
                     sh 'rm -rf .git *'
 
-                    git branch: "${BRANCH}",
+                    git branch: "${env.BUILD_BRANCH}",
                         credentialsId: "${CREDENTIALS}",
                         url: "${REPO_URL}"
                 }
@@ -29,7 +51,7 @@ pipeline {
                         echo "Current Branch:"
                         git branch --show-current
 
-                        echo
+                        echo ""
                         echo "Latest Commit:"
                         git log -1 --oneline
                     '''
